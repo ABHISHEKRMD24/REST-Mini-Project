@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Children Details Pagination and Sorting Using RESTful APIs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-page: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+      color: #ffffff;
+      padding: 28px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form */
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background-color: #ffffff;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s, transform 0.05s;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #ffffff;
+      height: 42px;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--primary-light);
+    }
+
+    .btn-secondary:disabled {
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      border-color: var(--border-color);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Notification message */
+    .message {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background-color: #ecfdf5;
+      color: var(--success);
+      border: 1px solid #a7f3d0;
+    }
+
+    .message.error {
+      display: block;
+      background-color: #fef2f2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .sort-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sort-control label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .sort-control select {
+      width: auto;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+    }
+
+    .records-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background-color: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* Table */
+    .table-responsive {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--primary-light);
+      color: #1e3a8a;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 16px;
+      border-bottom: 2px solid var(--primary-border);
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 0.92rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 12px;
+    }
+
+    .badge-blue {
+      background-color: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .badge-pink {
+      background-color: #fce7f3;
+      color: #be185d;
+    }
+
+    .badge-neutral {
+      background-color: #f1f5f9;
+      color: #475569;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .page-info {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .pagination-actions {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>Children Details Pagination & Sorting</h1>
+      <p>Demonstrating RESTful GET and POST APIs with Node.js & Express</p>
+    </header>
+
+    <!-- Add Child Form Card -->
+    <div class="card">
+      <h2 class="card-title">Add Child Details</h2>
+      <form id="childForm">
+        <div class="form-group">
+          <label for="childName">Name</label>
+          <input type="text" id="childName" placeholder="e.g. John Doe" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="childAge">Age</label>
+          <input type="number" id="childAge" placeholder="e.g. 7" min="1" max="18" required>
+        </div>
+
+        <div class="form-group">
+          <label for="childGender">Gender</label>
+          <select id="childGender" required>
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">Add Child</button>
+      </form>
+      <div id="formMessage" class="message"></div>
+    </div>
+
+    <!-- Children List Card -->
+    <div class="card">
+      <div class="controls-bar">
+        <div class="sort-control">
+          <label for="sortSelect">Sort By:</label>
+          <select id="sortSelect">
+            <option value="name">Name (A → Z)</option>
+            <option value="name-desc">Name (Z → A)</option>
+            <option value="age-asc">Age (Youngest First)</option>
+            <option value="age-desc">Age (Oldest First)</option>
+            <option value="id-asc">ID (Lowest / Oldest: 1 → 40)</option>
+            <option value="id-desc">ID (Highest / Newest: 40 → 1)</option>
+            <option value="gender-female">Gender (Female First)</option>
+            <option value="gender-male">Gender (Male First)</option>
+          </select>
+        </div>
+        <span id="recordsBadge" class="records-count">Total: 0 children</span>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Name</th>
+              <th style="width: 110px;">Age</th>
+              <th style="width: 140px;">Gender</th>
+            </tr>
+          </thead>
+          <tbody id="childrenTableBody">
+            <tr>
+              <td colspan="4" class="empty-state">Loading data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <span id="pageIndicator" class="page-info">Page 1 of 1</span>
+        <div class="pagination-actions">
+          <button id="prevBtn" class="btn-secondary" disabled>&larr; Previous</button>
+          <button id="nextBtn" class="btn-secondary" disabled>Next &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    let currentPage = 1;
+    let currentSort = 'name';
+    let totalPages = 1;
+
+    // DOM Elements
+    const form = document.getElementById('childForm');
+    const childNameInput = document.getElementById('childName');
+    const childAgeInput = document.getElementById('childAge');
+    const childGenderInput = document.getElementById('childGender');
+    const formMessage = document.getElementById('formMessage');
+    const sortSelect = document.getElementById('sortSelect');
+    const tableBody = document.getElementById('childrenTableBody');
+    const recordsBadge = document.getElementById('recordsBadge');
+    const pageIndicator = document.getElementById('pageIndicator');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // Helper: Show notification message
+    function showMessage(text, isError = false) {
+      formMessage.textContent = text;
+      formMessage.className = 'message ' + (isError ? 'error' : 'success');
+      setTimeout(() => {
+        formMessage.className = 'message';
+        formMessage.textContent = '';
+      }, 3500);
+    }
+
+    // Helper: Gender badge style
+    function getGenderBadge(gender) {
+      if (gender === 'Male') return '<span class="badge badge-blue">Male</span>';
+      if (gender === 'Female') return '<span class="badge badge-pink">Female</span>';
+      return `<span class="badge badge-neutral">${gender}</span>`;
+    }
+
+    // Fetch children from GET /api/children
+    async function loadChildren() {
+      try {
+        const response = await fetch(`/api/children?page=${currentPage}&sortBy=${currentSort}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch children data');
+        }
+
+        const data = await response.json();
+        const { children, totalPages: pages, totalRecords, currentPage: page } = data;
+
+        currentPage = page;
+        totalPages = pages;
+
+        // Render Table Rows
+        if (!children || children.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="4" class="empty-state">No child records found.</td></tr>';
+        } else {
+          tableBody.innerHTML = children.map(child => `
+            <tr>
+              <td><strong>#${child.id}</strong></td>
+              <td>${child.name}</td>
+              <td>${child.age} yrs</td>
+              <td>${getGenderBadge(child.gender)}</td>
+            </tr>
+          `).join('');
+        }
+
+        // Update Total Records Badge & Page Indicator
+        recordsBadge.textContent = `Total: ${totalRecords} children`;
+        pageIndicator.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+
+        // Update Pagination Buttons
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+
+      } catch (error) {
+        console.error(error);
+        tableBody.innerHTML = '<tr><td colspan="4" class="empty-state" style="color: #dc2626;">Error loading data from API.</td></tr>';
+      }
+    }
+
+    // Handle Form Submit: POST /api/children
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const newChild = {
+        name: childNameInput.value.trim(),
+        age: parseInt(childAgeInput.value),
+        gender: childGenderInput.value
+      };
+
+      try {
+        const response = await fetch('/api/children', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newChild)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showMessage(result.message || 'Child added successfully!');
+          form.reset();
+          // Reload the list with current sort
+          await loadChildren();
+        } else {
+          showMessage(result.error || 'Failed to add child.', true);
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage('Network error while adding child.', true);
+      }
+    });
+
+    // Handle Sort Dropdown Change
+    sortSelect.addEventListener('change', () => {
+      currentSort = sortSelect.value;
+      currentPage = 1; // reset to first page on sort change
+      loadChildren();
+    });
+
+    // Handle Previous Button Click
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadChildren();
+      }
+    });
+
+    // Handle Next Button Click
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadChildren();
+      }
+    });
+
+    // Initial Load
+    loadChildren();
+  </script>
+</body>
+</html>
